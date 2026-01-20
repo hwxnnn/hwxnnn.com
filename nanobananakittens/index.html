@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cat Meme Gallery</title>
+    <style>
+        /* Dark Mode Base */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #000000; 
+            color: #ffffff; 
+            text-align: center; 
+            margin: 0;
+            padding-bottom: 40px;
+            -webkit-tap-highlight-color: transparent; /* Removes grey tap box on iOS */
+        }
+
+        h1 { margin-top: 40px; font-size: 1.8rem; margin-bottom: 10px; font-weight: 600; }
+
+        /* The Info Bar */
+        .info-bar { 
+            color: #888; 
+            font-size: 0.85rem; 
+            margin-bottom: 25px; 
+            background: #1a1a1a; 
+            display: inline-block; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            border: 1px solid #333;
+        }
+
+        /* The Grid */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* 160px fits nicely on mobile */
+            gap: 10px;
+            padding: 10px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .gallery a {
+            display: block;
+            overflow: hidden;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            aspect-ratio: 1 / 1; /* Forces square thumbnails (optional, looks cleaner) */
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            display: block;
+        }
+
+        .gallery img.loaded { opacity: 1; }
+
+        /* Desktop Only: Hover Effect (Disabled on Mobile) */
+        @media (hover: hover) {
+            .gallery img { transition: transform 0.3s ease, opacity 0.3s; }
+            .gallery img:hover { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🍌 고양이 짤 DB 🐈 by @hwx.nnn</h1>
+    <div class="info-bar">1. 원하는 짤 탭하기 2. 꾹 누르고 "사진 앱에 저장"</div>
+    
+    <div class="gallery" id="gallery"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const username = 'hwxnnn';
+        const repo = 'NanoBananaKittens';
+        const branch = 'main'; // Ensure this matches your branch (main vs master)
+        
+        const compressedFolder = 'nanobananakittens/compressed';
+        const originalFolder = 'original';     
+        // ---------------------
+
+        const gallery = document.getElementById('gallery');
+        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/${compressedFolder}`;
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(file => {
+                    // Filter: Look for JPEGs in the compressed folder
+                    if (file.name.match(/\.(jpg|jpeg)$/i)) {
+                        
+                        // 1. Swap extension: 'meme.jpg' -> 'meme.png'
+                        const originalFileName = file.name.replace(/\.(jpg|jpeg)$/i, '.png');
+                        
+                        // 2. Build the RAW URL for the 8K Original
+                        // Note: raw.githubusercontent.com serves the image directly
+                        const originalUrl = `${originalFolder}/${originalFileName}`;
+
+                        // 3. Create Link
+                        const link = document.createElement('a');
+                        link.href = originalUrl;
+                        link.target = "_blank"; // Opens new tab (Required for iOS "Save")
+                        link.rel = "noopener noreferrer"; // Security best practice
+
+                        // 4. Create Thumbnail
+                        const img = document.createElement('img');
+                        // Use wsrv.nl to resize the compressed image to a perfect thumbnail
+                        img.src = `https://wsrv.nl/?url=${encodeURIComponent(file.download_url)}&w=400&h=400&fit=cover&q=75&output=webp`;
+                        img.loading = "lazy";
+                        
+                        // Fade in when ready
+                        img.onload = () => img.classList.add('loaded');
+
+                        link.appendChild(img);
+                        gallery.appendChild(link);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                gallery.innerHTML = "<p style='color:#666; margin-top:50px;'>Gallery failed to load.<br>Check console for details.</p>";
+            });
+    </script>
+</body>
+</html>
