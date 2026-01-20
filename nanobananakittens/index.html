@@ -7,7 +7,6 @@
     <style>
         /* Dark Mode Base */
         body { 
-            /* Priority: SF Pro (Apple) -> System (Android/Win) -> Fallbacks */
             font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background: #000000; 
             color: #ffffff; 
@@ -17,7 +16,6 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Typography */
         h1 { 
             margin-top: 40px; 
             font-size: 1.8rem; 
@@ -34,13 +32,11 @@
             margin-bottom: 25px;
         }
 
-        /* Brand Color (#FFCC01) */
         .brand-color {
             color: #FFCC01;
             font-weight: 600;
         }
 
-        /* The Info Bar */
         .info-bar { 
             color: #888; 
             font-size: 0.85rem; 
@@ -52,7 +48,6 @@
             border: 1px solid #333;
         }
 
-        /* The Grid */
         .gallery {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -103,27 +98,27 @@
         const infoBarEl = document.getElementById('info-bar');
 
         if (userLang.startsWith('ko')) {
-            // KOREAN SETTINGS
             titleEl.innerText = "🍌🐈 고양이 짤 DB";
             subTitleEl.innerHTML = '초고화질 고양이 짤, <span class="brand-color">NanoBananaKittens</span>';
             infoBarEl.innerText = '1. 원하는 짤 탭하기 2. 꾹 누르고 "사진 앱에 저장"';
             document.title = "고양이 짤 DB";
         } else {
-            // ENGLISH / DEFAULT SETTINGS
             titleEl.innerText = "NanoBananaKittens";
             subTitleEl.innerHTML = 'Cat memes, redrawn by <span class="brand-color">Nano Banana Pro</span>';
-            // Updated English Text
             infoBarEl.innerText = '1. Tap on the cat you want | 2. Hold and Save to Photos';
             document.title = "NanoBananaKittens";
         }
 
         // --- 2. GALLERY CONFIGURATION ---
         const username = 'hwxnnn';
-        const repo = 'NanoBananaKittens';
-        const branch = 'main'; 
         
-        // Ensure this path matches your folder structure exactly
+        // FIXED: The repo is 'hwxnnn.com', not 'NanoBananaKittens'
+        const repo = 'hwxnnn.com';
+        
+        // FIXED: Path matches your screenshot (folder inside root)
         const compressedFolder = 'nanobananakittens/compressed';
+        
+        // This is relative to the HTML file, so 'original' is correct
         const originalFolder = 'original';     
         // ---------------------
 
@@ -131,14 +126,17 @@
         const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/${compressedFolder}`;
 
         fetch(apiUrl)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 data.forEach(file => {
                     if (file.name.match(/\.(jpg|jpeg)$/i)) {
                         
                         const originalFileName = file.name.replace(/\.(jpg|jpeg)$/i, '.png');
-                        
-                        // Relative path assumes index.html is in nanobananakittens folder
                         const originalUrl = `${originalFolder}/${originalFileName}`;
 
                         const link = document.createElement('a');
@@ -147,6 +145,7 @@
                         link.rel = "noopener noreferrer"; 
 
                         const img = document.createElement('img');
+                        // Using wsrv.nl to optimize the GitHub raw images for speed
                         img.src = `https://wsrv.nl/?url=${encodeURIComponent(file.download_url)}&w=400&h=400&fit=cover&q=75&output=webp`;
                         img.loading = "lazy";
                         
@@ -159,7 +158,8 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                gallery.innerHTML = "<p style='color:#666; margin-top:50px;'>Gallery failed to load.</p>";
+                // Added debug info to the error message so you can see what path it tried
+                gallery.innerHTML = `<p style='color:#666; margin-top:50px;'>Gallery failed to load.<br><small>Tried accessing: ${repo}/${compressedFolder}</small></p>`;
             });
     </script>
 </body>
