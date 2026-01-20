@@ -1,0 +1,58 @@
+:root {
+    /* This stack grabs SF Pro automatically on macOS/iOS */
+    --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-main);
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center; /* Center horizontally? Remove if you want left align */
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    padding: 20px;
+    text-align: left; /* Aligns text to the left like the image */
+}
+
+/* "Hi, I'm Joohwan" */
+h1 {
+    font-weight: 700; /* Bold */
+    font-size: 3rem;
+    margin-bottom: 0.2rem;
+    color: #000;
+}
+
+/* "Whenever I'm bored..." */
+.subtitle {
+    font-weight: 300; /* Light */
+    font-size: 2rem;
+    margin-top: 0;
+    margin-bottom: 3rem; /* Space between text and projects */
+    color: #000;
+}
+
+/* Project Link Styling */
+.project-link {
+    display: inline-block;
+    font-weight: 300; /* Light */
+    font-size: 2rem;
+    text-decoration: none;
+    transition: color 0.3s ease; /* Smooth hover transition */
+}
+
+/* NanoBananaKittens Specifics */
+.banana-kittens {
+    color: #FFCC01; /* Your requested yellow */
+}
+
+/* Hover Effect */
+.banana-kittens:hover {
+    color: #E0B300; /* A slightly darker yellow/gold on hover */
+    cursor: pointer;
+}
