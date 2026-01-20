@@ -3,14 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>Joohwan</title>
+    <meta name="description" content="Whenever I’m bored, I make weird stuff.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://hwxnnn.com/">
+    <meta property="og:title" content="Hi, I’m Joohwan.">
+    <meta property="og:description" content="Whenever I’m bored, I make weird stuff.">
+    <meta property="og:image" content="https://hwxnnn.com/og-image.png">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://hwxnnn.com/">
+    <meta property="twitter:title" content="Hi, I’m Joohwan.">
+    <meta property="twitter:description" content="Whenever I’m bored, I make weird stuff.">
+    <meta property="twitter:image" content="https://hwxnnn.com/og-image.png">
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <main class="container">
         <h1>Hi, I’m Joohwan.</h1>
         
-        <p class="subtitle">Whenever I’m bored, I make weird stuff.</p>
+        <p class="subtitle" id="subtitle">Whenever I’m bored, I make weird stuff.</p>
         
         <div class="project-list">
             <a href="https://hwxnnn.com/NanoBananaKittens" class="project-link banana-kittens">
@@ -18,5 +33,15 @@
             </a>
         </div>
     </main>
+
+    <script>
+        // Check browser language
+        const userLang = navigator.language || navigator.userLanguage; 
+        
+        // If language starts with 'ko' (Korean), change the text
+        if (userLang.startsWith('ko')) {
+            document.getElementById('subtitle').innerText = "심심할 때 이상한거 만듭니다.";
+        }
+    </script>
 </body>
 </html>
