@@ -5,17 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NanoBananaKittens</title>
     <style>
+        /* Dark Mode Base */
         body { 
-            font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background: #000000; color: #ffffff; text-align: center; margin: 0; padding-bottom: 40px;
+            font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: #000000; 
+            color: #ffffff; 
+            text-align: center; 
+            margin: 0;
+            padding-bottom: 40px;
+            -webkit-tap-highlight-color: transparent;
         }
-        h1 { margin-top: 40px; font-size: 1.8rem; font-weight: 700; }
-        h2 { font-size: 0.95rem; color: #bbbbbb; margin-bottom: 25px; font-weight: 400; }
-        .brand-color { color: #FFCC01; font-weight: 600; }
-        .info-bar { color: #888; font-size: 0.85rem; margin-bottom: 25px; background: #1a1a1a; display: inline-block; padding: 8px 16px; border-radius: 20px; border: 1px solid #333; }
-        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; padding: 10px; max-width: 1200px; margin: 0 auto; }
-        .gallery a { display: block; border-radius: 12px; overflow: hidden; position: relative; }
-        .gallery img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 1 / 1; display: block; background: #222; }
+
+        h1 { 
+            margin-top: 40px; 
+            font-size: 1.8rem; 
+            margin-bottom: 5px; 
+            font-weight: 700; 
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 0.95rem;
+            font-weight: 400;
+            color: #bbbbbb;
+            margin-bottom: 25px;
+        }
+
+        .brand-color {
+            color: #FFCC01;
+            font-weight: 600;
+        }
+
+        .info-bar { 
+            color: #888; 
+            font-size: 0.85rem; 
+            margin-bottom: 25px; 
+            background: #1a1a1a; 
+            display: inline-block; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            border: 1px solid #333;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            padding: 10px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .gallery a {
+            display: block;
+            overflow: hidden;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            aspect-ratio: 1 / 1; 
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            display: block;
+        }
+
+        .gallery img.loaded { opacity: 1; }
+
+        @media (hover: hover) {
+            .gallery img { transition: transform 0.3s ease, opacity 0.3s; }
+            .gallery img:hover { transform: scale(1.05); }
+        }
     </style>
 </head>
 <body>
@@ -27,44 +91,66 @@
     <div class="gallery" id="gallery"></div>
 
     <script>
-        // --- CONFIGURATION ---
-        const username = 'hwxnnn';
-        const repo = 'hwxnnn.com';
+        // --- 1. LANGUAGE DETECTION ---
+        const userLang = navigator.language || navigator.userLanguage;
+        const titleEl = document.getElementById('main-title');
+        const subTitleEl = document.getElementById('sub-title');
+        const infoBarEl = document.getElementById('info-bar');
+
+        if (userLang.startsWith('ko')) {
+            titleEl.innerText = "🍌🐈 고양이 짤 DB";
+            subTitleEl.innerHTML = '초고화질 고양이 짤, <span class="brand-color">NanoBananaKittens</span>';
+            infoBarEl.innerText = '1. 원하는 짤 탭하기 2. 꾹 누르고 "사진 앱에 저장"';
+            document.title = "고양이 짤 DB";
+        } else {
+            titleEl.innerText = "NanoBananaKittens";
+            subTitleEl.innerHTML = 'Cat memes, redrawn by <span class="brand-color">Nano Banana Pro</span>';
+            infoBarEl.innerText = '1. Tap on the cat you want | 2. Hold and Save to Photos';
+            document.title = "NanoBananaKittens";
+        }
+
+        // --- 2. EXTERNAL REPO CONFIGURATION ---
+        // This points specifically to your Image Hosting Repo
+        const imageRepoUser = 'hwxnnn';
+        const imageRepoName = 'NanoBananaKittens';
+        const imageRepoBranch = 'main'; // or 'master'
         
-        // We assume the folder structure matches the URL structure
-        const compressedFolder = 'nanobananakittens/compressed';
-        const originalFolder = 'original'; // Relative to this HTML file
+        const compressedFolder = 'compressed'; // Folder for Gallery Thumbnails (JPG)
+        const originalFolder = 'original';     // Folder for Full Size (PNG)
+        // ---------------------
 
         const gallery = document.getElementById('gallery');
-        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/${compressedFolder}`;
+        
+        // Fetch file list from the external repo API
+        const apiUrl = `https://api.github.com/repos/${imageRepoUser}/${imageRepoName}/contents/${compressedFolder}`;
 
         fetch(apiUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Folder not found: ${compressedFolder}`);
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 data.forEach(file => {
-                    if (file.name.match(/\.(jpg|jpeg|png)$/i)) {
+                    if (file.name.match(/\.(jpg|jpeg)$/i)) {
                         
-                        // 1. Link to Original (High Res)
-                        // Assuming original is .png, but we'll stick to what we know works
+                        // 1. Determine filenames
+                        // We assume the compressed file is 'cat.jpg' and original is 'cat.png'
                         const originalFileName = file.name.replace(/\.(jpg|jpeg)$/i, '.png');
-                        const originalUrl = `${originalFolder}/${originalFileName}`;
+                        
+                        // 2. Build the FULL EXTERNAL URL for the Click
+                        // We use raw.githubusercontent.com to link directly to the image file in the other repo
+                        const originalUrl = `https://raw.githubusercontent.com/${imageRepoUser}/${imageRepoName}/${imageRepoBranch}/${originalFolder}/${originalFileName}`;
 
-                        // 2. Thumbnail Source (Compressed)
-                        // We use the direct GitHub raw link to be safe
-                        const rawUrl = file.download_url;
-
+                        // 3. Create Link
                         const link = document.createElement('a');
                         link.href = originalUrl;
                         link.target = "_blank"; 
+                        link.rel = "noopener noreferrer"; 
 
+                        // 4. Create Thumbnail
+                        // wsrv.nl fetches the image from your external repo and optimizes it
                         const img = document.createElement('img');
-                        img.src = rawUrl; // Loading directly from GitHub (No proxy)
+                        img.src = `https://wsrv.nl/?url=${encodeURIComponent(file.download_url)}&w=400&h=400&fit=cover&q=75&output=webp`;
                         img.loading = "lazy";
+                        
+                        img.onload = () => img.classList.add('loaded');
 
                         link.appendChild(img);
                         gallery.appendChild(link);
@@ -72,21 +158,9 @@
                 });
             })
             .catch(error => {
-                console.error(error);
-                gallery.innerHTML = `<p style='color:#ff4444; margin-top:50px;'>
-                    <b>Error:</b> Could not find images.<br>
-                    <span style="font-size:0.8em; color:#888;">Expected location: ${repo}/${compressedFolder}</span>
-                </p>`;
+                console.error('Error:', error);
+                gallery.innerHTML = "<p style='color:#666; margin-top:50px;'>Gallery failed to load.<br>Make sure the 'compressed' folder exists in the NanoBananaKittens repo.</p>";
             });
-            
-        // Language Check
-        const userLang = navigator.language || navigator.userLanguage;
-        if (userLang.startsWith('ko')) {
-            document.getElementById('main-title').innerText = "🍌🐈 고양이 짤 DB";
-            document.getElementById('sub-title').innerHTML = '초고화질 고양이 짤, <span class="brand-color">NanoBananaKittens</span>';
-            document.getElementById('info-bar').innerText = '1. 원하는 짤 탭하기 2. 꾹 누르고 "사진 앱에 저장"';
-            document.title = "고양이 짤 DB";
-        }
     </script>
 </body>
 </html>
