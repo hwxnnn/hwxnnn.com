@@ -59,6 +59,30 @@
         if (userLang.startsWith('ko')) {
             document.getElementById('subtitle').innerText = "심심할 때 이상한거 만듭니다.";
         }
+
+        // --- Theme Handling ---
+        function applyTheme() {
+            const savedTheme = localStorage.getItem('nano_theme') || 'auto';
+            const root = document.documentElement;
+
+            if (savedTheme === 'light') {
+                root.setAttribute('data-theme', 'light');
+            } else if (savedTheme === 'dark') {
+                root.setAttribute('data-theme', 'dark');
+            } else {
+                root.removeAttribute('data-theme');
+            }
+        }
+
+        // Check on load
+        applyTheme();
+
+        // Optional: Listen for storage changes (if user changes theme in another tab/app)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'nano_theme') {
+                applyTheme();
+            }
+        });
     </script>
 </body>
 
