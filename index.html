@@ -1,47 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <title>Joohwan</title>
+
+    <title>@hwxnnn</title>
     <meta name="description" content="Whenever I’m bored, I make weird stuff.">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://hwxnnn.com/">
-    <meta property="og:title" content="Hi, I’m Joohwan.">
+    <meta property="og:title" content="Hi, I’m @hwxnnn.">
     <meta property="og:description" content="Whenever I’m bored, I make weird stuff.">
     <meta property="og:image" content="https://hwxnnn.com/og-image.png">
 
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://hwxnnn.com/">
-    <meta property="twitter:title" content="Hi, I’m Joohwan.">
+    <meta property="twitter:title" content="Hi, I’m @hwxnnn.">
     <meta property="twitter:description" content="Whenever I’m bored, I make weird stuff.">
     <meta property="twitter:image" content="https://hwxnnn.com/og-image.png">
 
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+    <!-- Background Blobs -->
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
     <main class="container">
-        <h1>Hi, I’m Joohwan.</h1>
-        
+        <h1>Hi, I’m @hwx.nnn</h1>
         <p class="subtitle" id="subtitle">Whenever I’m bored, I make weird stuff.</p>
-        
+
         <div class="project-list">
-            <a href="https://hwxnnn.com/nanobananakittens" class="project-link banana-kittens">
-                🍌🐈 NanoBananaKittens
+            <!-- CatCollage Card -->
+            <a href="https://hwxnnn.com/catcollage" class="project-card">
+                <div class="card-icon">🐈</div>
+                <div class="card-info">
+                    <h3 class="card-title">CatCollage</h3>
+                    <p class="card-desc">High-res cat memes database</p>
+                </div>
+                <div class="card-arrow">→</div>
             </a>
+
+            <!-- Placeholder for future projects -->
+            <!-- <a href="#" class="project-card"> ... </a> -->
         </div>
     </main>
 
     <script>
         // Check browser language
-        const userLang = navigator.language || navigator.userLanguage; 
-        
+        const userLang = navigator.language || navigator.userLanguage;
+
         // If language starts with 'ko' (Korean), change the text
         if (userLang.startsWith('ko')) {
             document.getElementById('subtitle').innerText = "심심할 때 이상한거 만듭니다.";
         }
     </script>
 </body>
+
 </html>

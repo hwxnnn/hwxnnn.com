@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CatCollage</title>
+    <style>
+        /* Theming Variables */
+        :root {
+            /* Default (Dark / Auto-Dark) */
+            --bg-color: #000000;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --surface-color: #1c1c1e;
+            --info-bar-bg: #1a1a1a;
+            --info-bar-border: #333333;
+            --btn-bg: rgba(30, 30, 30, 0.6);
+            --btn-bg-active: rgba(60, 60, 60, 0.8);
+            --btn-border: rgba(255, 255, 255, 0.1);
+            --icon-fill: #ffffff;
+            --divider-color: #333333;
+            --lang-hover: rgba(255, 255, 255, 0.1);
+            --toggle-bg: #39393d;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #F2F2F7;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --surface-color: #ffffff;
+            --info-bar-bg: #ffffff;
+            --info-bar-border: #d1d1d6;
+            --btn-bg: rgba(255, 255, 255, 0.6);
+            --btn-bg-active: rgba(200, 200, 200, 0.5);
+            --btn-border: rgba(0, 0, 0, 0.1);
+            --icon-fill: #000000;
+            --divider-color: #e5e5ea;
+            --lang-hover: rgba(0, 0, 0, 0.05);
+            --toggle-bg: #e9e9ea;
+        }
+
+        /* Dark Mode Base */
+        body {
+            font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            text-align: center;
+            margin: 0;
+            padding-bottom: 40px;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        h1 {
+            margin-top: 40px;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 0.95rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        .brand-color {
+            color: #FFCC01;
+            font-weight: 600;
+        }
+
+        .info-bar {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 25px;
+            background: var(--info-bar-bg);
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--info-bar-border);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            padding: 10px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .gallery a {
+            display: block;
+            overflow: hidden;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .gallery img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            aspect-ratio: 1 / 1;
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            display: block;
+        }
+
+        .gallery img.loaded {
+            opacity: 1;
+        }
+
+        @media (hover: hover) {
+            .gallery img {
+                transition: transform 0.3s ease, opacity 0.3s;
+            }
+
+            .gallery img:hover {
+                transform: scale(1.05);
+            }
+        }
+
+        /* Settings UI & Contributions Button Shared Styles */
+        .header-btn {
+            position: fixed;
+            top: 20px;
+            height: 40px;
+            background: var(--btn-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            border: 1px solid var(--btn-border);
+            transition: transform 0.2s, background 0.2s;
+            padding: 0 16px;
+            gap: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .header-btn:active {
+            transform: scale(0.95);
+            background: var(--btn-bg-active);
+        }
+
+        .header-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--icon-fill);
+            flex-shrink: 0;
+        }
+
+        /* Positions */
+        .settings-btn {
+            right: 20px;
+        }
+
+        .contrib-btn {
+            left: 20px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: flex-end;
+            /* Mobile default: bottom sheet */
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--surface-color);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            min-height: 40vh;
+            text-align: left;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 600px) {
+            .modal-overlay {
+                align-items: flex-start;
+                justify-content: flex-end;
+                background: transparent;
+                /* No dim on desktop for dropdown feel */
+                pointer-events: none;
+                /* Let clicks pass through if we want, but we need click-to-close on overlay */
+            }
+
+            /* We need pointer events on the overlay to catch clicks to close, 
+               but if we want it to feel like a dropdown, usually we don't dim. 
+               Let's keep pointer-events auto so we can close it. */
+            .modal-overlay {
+                pointer-events: auto;
+            }
+
+            .modal-content {
+                position: absolute;
+                top: 70px;
+                right: 20px;
+                width: 300px;
+                border-radius: 14px;
+                min-height: auto;
+                transform: scale(0.95);
+                transform-origin: top right;
+                opacity: 0;
+                transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+                box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+                border: 1px solid var(--divide-color, rgba(255, 255, 255, 0.1));
+            }
+
+            .modal-overlay.open .modal-content {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Mobile specific transition match */
+        /* Mobile specific transition match and Layout Fixes */
+        @media (max-width: 599px) {
+            .modal-overlay.open .modal-content {
+                transform: translateY(0);
+            }
+
+            /* Header Mobile Optimization: Icon Only */
+            .header-btn {
+                width: 40px;
+                padding: 0;
+                border-radius: 50%;
+            }
+
+            .header-btn span {
+                display: none;
+            }
+
+            /* Push content down on mobile */
+            h1 {
+                margin-top: 90px;
+            }
+        }
+
+        /* Contribution Modal Alignment fixes */
+        @media (min-width: 600px) {
+            #contrib-modal {
+                justify-content: flex-start;
+                /* Align left */
+            }
+
+            #contrib-modal .modal-content {
+                right: auto;
+                left: 20px;
+                /* Mirror settings */
+                transform-origin: top left;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            flex: 1;
+            text-align: center;
+        }
+
+        .modal-action {
+            width: 60px;
+        }
+
+        /* Spacer */
+        .modal-close {
+            color: #0A84FF;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            text-align: right;
+            width: 60px;
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 15px 0;
+            border-top: 1px solid var(--divider-color);
+            border-bottom: 1px solid var(--divider-color);
+        }
+
+        .toggle-label {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .toggle-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+            line-height: 1.4;
+            padding-right: 15px;
+        }
+
+        /* --- PICKER UI (iOS Style) --- */
+        .picker-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 2500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s;
+            border-radius: 14px;
+            /* match parent */
+        }
+
+        .picker-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .picker-menu {
+            background: var(--surface-color);
+            /* light blur if supported, or solid */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            width: 250px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            transform: scale(0.9);
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            overflow: hidden;
+            border: 1px solid var(--divide-color, rgba(255, 255, 255, 0.1));
+        }
+
+        .picker-overlay.open .picker-menu {
+            transform: scale(1);
+        }
+
+        .picker-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--divider-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .picker-item:last-child {
+            border-bottom: none;
+        }
+
+        .picker-item:active {
+            background: var(--lang-hover);
+        }
+
+        .picker-item.selected .picker-check {
+            opacity: 1;
+        }
+
+        .text-container {
+            flex: 1;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 51px;
+            height: 31px;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--toggle-bg);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 27px;
+            width: 27px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background-color: #34C759;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Language & Appearance Selector Style */
+        .settings-section {
+            border-bottom: 1px solid var(--divider-color);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .option-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .option-item:active {
+            background: var(--lang-hover);
+        }
+
+        .option-name {
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .option-check {
+            color: #FFCC01;
+            opacity: 0;
+            font-weight: bold;
+        }
+
+        .option-item.selected .option-check {
+            opacity: 1;
+        }
+
+        /* New Settings Row Style (Label ... Value >) */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--divider-color);
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .setting-row:active {
+            opacity: 0.7;
+        }
+
+        .setting-label {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .setting-value {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-arrow {
+            color: var(--divide-color, #666);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Settings UI (Existing) */
+        /* ... existing settings styles ... */
+
+        /* Preview Modal UI */
+        .preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            /* Darker dim */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .preview-modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .preview-content {
+            position: relative;
+            max-width: 100%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            justify-content: center;
+        }
+
+        .preview-modal.open .preview-content {
+            transform: scale(1);
+        }
+
+        /* New Wrapper for Image + Placeholder */
+        .preview-image-wrapper {
+            position: relative;
+            /* Initial state: Responsive Square to match thumbnails */
+            width: 100%;
+            max-width: 800px;
+            /* Max width of the potential image */
+            aspect-ratio: 1 / 1;
+            background: rgba(128, 128, 128, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            transition: aspect-ratio 0.3s ease, width 0.3s ease, height 0.3s ease;
+            overflow: hidden;
+            /* Ensure image doesn't overflow during transition */
+        }
+
+        .preview-image-wrapper.loaded {
+            aspect-ratio: auto;
+            /* Allow it to snap to image size */
+            background: transparent;
+            /* Remove gray background fully loaded */
+        }
+
+        .preview-img {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 12px;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            position: relative;
+            z-index: 2;
+            display: block;
+            min-width: 50px;
+            /* Prevent collapse to 0 */
+        }
+
+        .preview-img.loaded {
+            opacity: 1;
+        }
+
+        .preview-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #FFCC01;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            z-index: 1;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .download-btn {
+            background: #FFCC01;
+            color: #000;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 12px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            margin-top: 25px;
+            box-shadow: 0 4px 15px rgba(255, 204, 1, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(255, 204, 1, 0.2);
+        }
+
+        .preview-close-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-btn settings-btn" id="settings-btn" role="button" aria-label="Settings">
+        <span data-i18n="settings.title">Settings</span>
+        <svg viewBox="0 0 24 24">
+            <path
+                d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
+        </svg>
+    </div>
+
+    <div class="header-btn contrib-btn" id="contrib-btn" role="button" aria-label="Contributions">
+        <svg viewBox="0 0 24 24">
+            <path d="M19,13h-6v6h-2v-6H5v-2h6V5h2v6h6V13z" />
+        </svg>
+        <span data-i18n="contribute.title">Contribute</span>
+    </div>
+
+    <div class="modal-overlay" id="settings-modal" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-action"></div>
+                <div class="modal-title" id="settings-title" data-i18n="settings.title">Settings</div>
+                <div class="modal-close" id="close-settings" data-i18n="common.done">Done</div>
+            </div>
+            <div class="modal-body">
+                <!-- Appearance Row -->
+                <div class="setting-row" onclick="openPicker('theme')">
+                    <div class="setting-label" data-i18n="settings.appearance">Appearance</div>
+                    <div class="setting-value">
+                        <span id="current-theme-label">Auto</span>
+                        <!-- Simple chevron -->
+                        <svg width="6" height="10" viewBox="0 0 6 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 9L5 5L1 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Language Row -->
+                <div class="setting-row" onclick="openPicker('lang')">
+                    <div class="setting-label" data-i18n="settings.language">Language</div>
+                    <div class="setting-value">
+                        <span id="current-lang-label">System Default</span>
+                        <svg width="6" height="10" viewBox="0 0 6 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 9L5 5L1 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Picker Overlay (Inside Modal) -->
+                <div class="picker-overlay" id="picker-overlay" onclick="closePicker(event)">
+                    <div class="picker-menu" id="picker-menu">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+
+                <div class="toggle-container">
+                    <div class="toggle-row">
+                        <div class="text-container">
+                            <div class="toggle-label" id="quality-label" data-i18n="settings.maximum_quality">Download
+                                in maximum quality</div>
+                            <div class="toggle-desc" id="quality-desc"
+                                data-i18n="settings.maximum_quality_alert_message">Enabling this will download the
+                                highest quality
+                                available, which takes more space/time but looks stunning.</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="quality-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Contributions Modal -->
+    <div class="modal-overlay" id="contrib-modal" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-action"></div>
+                <div class="modal-title" data-i18n="contribute.title">Contributions</div>
+                <div class="modal-close" id="close-contrib"></div>
+            </div>
+            <div class="modal-body" style="padding-bottom: 20px;">
+                <p style="font-size: 1.1rem; line-height: 1.5; margin-top:0; color: var(--text-primary);"
+                    data-i18n="contribute.info1">Do you have a
+                    cat?</p>
+                <p style="font-size: 1rem; color: var(--text-secondary); line-height: 1.5;"
+                    data-i18n="contribute.info2">Send us your
+                    original cat photos! We will edit them beautifully and add them to CatCollage.</p>
+                <div
+                    style="background: var(--info-bar-bg); padding: 15px; border-radius: 12px; margin-top: 20px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; border: 1px solid var(--info-bar-border);">
+                    <span data-i18n="contribute.disclaimer">Note: By sending your photos, you agree that they can be
+                        edited and distributed through the CatCollage app.</span>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-top: 30px;">
+                    <div style="flex:1; text-align:center; padding: 15px; background: var(--toggle-bg); border-radius: 12px; font-weight: 600; cursor: pointer; color: var(--text-primary);"
+                        id="contrib-cancel" data-i18n="contribute.maybe_later">Maybe later</div>
+                    <div style="flex:1; text-align:center; padding: 15px; background: #FFCC01; color: black; border-radius: 12px; font-weight: 600; cursor: pointer;"
+                        id="contrib-ok" data-i18n="contribute.yes">Sure!</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="preview-modal" id="preview-modal">
+        <div class="preview-content">
+            <div class="preview-image-wrapper">
+                <div class="preview-spinner" id="preview-spinner"></div>
+                <img src="" alt="Preview" class="preview-img" id="preview-img">
+            </div>
+            <a href="#" class="download-btn" id="download-btn">
+                Download
+            </a>
+        </div>
+    </div>
+
+    <h1 id="main-title" data-i18n="app.title">CatCollage</h1>
+    <h2 id="sub-title" style="display:none;"></h2>
+    <div class="info-bar" id="info-bar" data-i18n="main.all_photos">1. Tap on the cat you want | 2. Hold and Save to
+        Photos</div>
+
+    <div class="gallery" id="gallery"></div>
+
+    <script>
+        // --- 1. LOCALIZATION SYSTEM ---
+        const translations = {
+            en: {
+                "app.title": "CatCollage 🐈",
+                "app.subtitle_pre": "Cat memes, redrawn by",
+                "main.all_photos": "Click on a cat and load them in high resolution.",
+                "common.done": "Done",
+                "settings.title": "Settings",
+                "settings.language": "Language",
+                "settings.system_default": "System Default",
+                "settings.maximum_quality": "Download in maximum quality",
+                "settings.maximum_quality_alert_message": "Enabling this will download the highest quality available, which takes more space/time but looks stunning.",
+                "contribute.title": "Contribute",
+                "contribute.info1": "Is something missing?",
+                "contribute.info2": "Send us a cat meme and I'll process and add them to CatCollage.",
+                "contribute.disclaimer": "Note: By sending your photos, you agree that they can be processed and distributed through the CatCollage app.",
+                "contribute.maybe_later": "Maybe later",
+                "contribute.yes": "Sure!",
+                "settings.appearance": "Appearance",
+                "settings.appearance_auto": "Auto",
+                "settings.appearance_light": "Light",
+                "settings.appearance_dark": "Dark"
+            },
+            ko: {
+                "app.title": "CatCollage 🐈",
+                "app.subtitle_pre": "초고화질 고양이 짤,",
+                "main.all_photos": "원하시는 이미지 눌러 고화질로 불러오세요",
+                "common.done": "완료",
+                "settings.title": "설정",
+                "settings.language": "언어",
+                "settings.system_default": "시스템 기본",
+                "settings.maximum_quality": "최고 화질로 다운로드",
+                "settings.maximum_quality_alert_message": "활성화하면 가장 높은 품질의 이미지를 다운로드합니다. 용량과 시간이 더 소요되지만 화질이 뛰어납니다.",
+                "contribute.title": "참여하기",
+                "contribute.info1": "원하시는 고양이 짤이 없나요?",
+                "contribute.info2": "원본 사진을 보내주시면 예쁘게 보정해서 앱에 추가해드려요!",
+                "contribute.disclaimer": "참고: 보내주신 사진은 보정되어 CatCollage를 통해 배포될 수 있습니다.",
+                "contribute.maybe_later": "나중에요",
+                "contribute.yes": "좋아요!",
+                "settings.appearance": "화면 테마",
+                "settings.appearance_auto": "자동",
+                "settings.appearance_light": "라이트 모드",
+                "settings.appearance_dark": "다크 모드"
+            }
+        };
+
+        let currentLang = 'default';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('nano_lang', lang);
+
+            // Visual Update - handled by updatePickerLabels for the main UI
+
+            // Only update if elements exist (legacy or other views)
+            const langEl = document.getElementById(`lang-${lang}`);
+            if (langEl) {
+                document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('selected'));
+                langEl.classList.add('selected');
+            }
+
+            // Determine actual language
+            let langCode = lang;
+            if (lang === 'default') {
+                const browserLang = navigator.language || navigator.userLanguage;
+                langCode = browserLang.startsWith('ko') ? 'ko' : 'en';
+            }
+
+            // Update Text
+            const t = translations[langCode] || translations['en'];
+
+            // Update Title (Special Case)
+            document.title = t["app.title"];
+
+            // Update all data-i18n elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.innerText = t[key];
+                }
+            });
+        }
+
+        // Initialize Language
+        const savedLang = localStorage.getItem('nano_lang') || 'default';
+        setLanguage(savedLang);
+
+        // --- 1.5 THEME SYSTEM ---
+        let currentTheme = 'auto'; // auto, light, dark
+
+        function applyTheme() {
+            const root = document.documentElement;
+            const themeToApply = currentTheme === 'auto'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : currentTheme;
+
+            if (themeToApply === 'light') {
+                root.setAttribute('data-theme', 'light');
+            } else {
+                root.removeAttribute('data-theme');
+            }
+        }
+
+        function setTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('nano_theme', theme);
+
+            // Visual Update - handled by updatePickerLabels for main UI
+            /* 
+            document.querySelectorAll('#theme-auto, #theme-light, #theme-dark').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`theme-${theme}`).classList.add('selected'); 
+            */
+
+            applyTheme();
+            updatePickerLabels();
+        }
+
+        // --- PICKER LOGIC ---
+        const pickerOverlay = document.getElementById('picker-overlay');
+        const pickerMenu = document.getElementById('picker-menu');
+
+        function openPicker(type) {
+            pickerMenu.innerHTML = '';
+
+            let options = [];
+            let currentVal = '';
+            let setFunc = null;
+
+            if (type === 'lang') {
+                // Use translations for labels
+                const t = translations[currentLang === 'default' ? (navigator.language.startsWith('ko') ? 'ko' : 'en') : currentLang];
+                const defT = translations[(navigator.language.startsWith('ko') ? 'ko' : 'en')];
+
+                options = [
+                    { val: 'default', label: defT['settings.system_default'] || "System Default" },
+                    { val: 'en', label: 'English' },
+                    { val: 'ko', label: '한국어' }
+                ];
+                currentVal = currentLang;
+                setFunc = setLanguage;
+            } else if (type === 'theme') {
+                const t = translations[currentLang === 'default' ? (navigator.language.startsWith('ko') ? 'ko' : 'en') : currentLang];
+                options = [
+                    { val: 'auto', label: t['settings.appearance_auto'] },
+                    { val: 'light', label: t['settings.appearance_light'] },
+                    { val: 'dark', label: t['settings.appearance_dark'] }
+                ];
+                currentVal = currentTheme;
+                setFunc = setTheme;
+            }
+
+            options.forEach(opt => {
+                const item = document.createElement('div');
+                item.className = `picker-item ${opt.val === currentVal ? 'selected' : ''}`;
+                item.innerHTML = `
+                    <span class="picker-name">${opt.label}</span>
+                    <span class="picker-check option-check" style="${opt.val === currentVal ? 'opacity:1' : 'opacity:0'}">✓</span>
+                `;
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    setFunc(opt.val);
+                    closePicker();
+                };
+                pickerMenu.appendChild(item);
+            });
+
+            pickerOverlay.classList.add('open');
+        }
+
+        function closePicker(e) {
+            if (e && e.target !== pickerOverlay) return;
+            pickerOverlay.classList.remove('open');
+        }
+
+        function updatePickerLabels() {
+            // Update the summary text in the main settings row
+            // Language
+            let langLabel = 'System Default';
+            if (currentLang === 'en') langLabel = 'English';
+            else if (currentLang === 'ko') langLabel = '한국어';
+            else {
+                // default
+                const t = translations[currentLang === 'default' ? (navigator.language.startsWith('ko') ? 'ko' : 'en') : currentLang];
+                // Actually we want the localized name of "System Default"
+                // Easier:
+                const el = document.querySelector('[data-i18n="settings.system_default"]'); // This element doesn't exist anymore in DOM!
+                // We need to fetch from translations
+                // Let's rely on setLanguage updating data-i18n, but we removed the data-i18n spans with checkmarks.
+                // We need to manually update the #current-lang-label
+            }
+
+            // Re-fetch translations cause they might have changed
+            const activeLangCode = currentLang === 'default'
+                ? (navigator.language.startsWith('ko') ? 'ko' : 'en')
+                : currentLang;
+            const t = translations[activeLangCode];
+
+            // Update Label Text (The "Language" and "Appearance" headers) - handled by setLanguage data-i18n loop if elements exist
+
+            // Update Values:
+            const langMap = {
+                'default': t['settings.system_default'],
+                'en': 'English',
+                'ko': '한국어'
+            };
+            document.getElementById('current-lang-label').innerText = langMap[currentLang];
+
+            const themeMap = {
+                'auto': t['settings.appearance_auto'],
+                'light': t['settings.appearance_light'],
+                'dark': t['settings.appearance_dark']
+            };
+            document.getElementById('current-theme-label').innerText = themeMap[currentTheme];
+        }
+
+        // Hook into setLanguage to update labels
+        const originalSetLanguage = setLanguage;
+        setLanguage = function (lang) {
+            originalSetLanguage(lang);
+            updatePickerLabels();
+        }
+
+        // Init Theme
+        const savedTheme = localStorage.getItem('nano_theme') || 'auto';
+        setTheme(savedTheme);
+
+        // Listen for system changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (currentTheme === 'auto') applyTheme();
+        });
+
+
+        // --- 2. EXTERNAL REPO CONFIGURATION ---
+        // This points specifically to your Image Hosting Repo
+        const imageRepoUser = 'hwxnnn';
+        const imageRepoName = 'NanoBananaKittens';
+        const imageRepoBranch = 'main'; // or 'master'
+
+        const compressedFolder = 'compressed'; // Folder for Gallery Thumbnails (JPG)
+        const originalFolder = 'original'; // Folder for Full Size (PNG)
+        const maximumFolder = 'maximum'; // Folder for Maximum Quality (PNG)
+        // ---------------------
+
+        // --- 3. DOM ELEMENTS & STATE ---
+        const gallery = document.getElementById('gallery');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const closeSettings = document.getElementById('close-settings');
+        // settingsTitle, qualityLabel, etc are now updated via setLanguage
+        const qualityToggle = document.getElementById('quality-toggle');
+
+        // Contribution Elements
+        const contribBtn = document.getElementById('contrib-btn');
+        const contribModal = document.getElementById('contrib-modal');
+        const closeContrib = document.getElementById('close-contrib'); // Hidden element but keep logically
+        const contribCancel = document.getElementById('contrib-cancel');
+        const contribOk = document.getElementById('contrib-ok');
+
+        // Initialize state from LocalStorage
+        let useMaxQuality = localStorage.getItem('nano_max_quality') === 'true';
+        qualityToggle.checked = useMaxQuality;
+
+        // REMOVED OLD LOCALIZATION BLOCK
+
+        // --- 5. INITIAL CONTENT FETCH ---
+        const apiUrl = `https://api.github.com/repos/${imageRepoUser}/${imageRepoName}/contents/${compressedFolder}`;
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(file => {
+                    if (file.name.match(/\.(jpg|jpeg)$/i)) {
+
+                        // 1. Determine filenames
+                        const originalFileName = file.name.replace(/\.(jpg|jpeg)$/i, '.png');
+
+                        // 2. Determine Folder based on current state
+                        const currentFolder = useMaxQuality ? maximumFolder : originalFolder;
+
+                        // 3. Build URL (Only used for 'Open in new tab' context now)
+                        const linkUrl = `https://raw.githubusercontent.com/${imageRepoUser}/${imageRepoName}/${imageRepoBranch}/${currentFolder}/${originalFileName}`;
+
+                        // 4. Create Link
+                        const link = document.createElement('a');
+                        link.href = linkUrl;
+                        link.target = "_blank";
+                        link.rel = "noopener noreferrer";
+
+                        // NEW: Intercept Click for Preview
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            openPreview(file);
+                        });
+
+                        // 5. Create Thumbnail (Always from compressed/ via wsrv.nl)
+                        const img = document.createElement('img');
+                        img.src = `https://wsrv.nl/?url=${encodeURIComponent(file.download_url)}&w=400&h=400&fit=cover&q=75&output=webp`;
+                        img.loading = "lazy";
+
+                        img.onload = () => img.classList.add('loaded');
+
+                        link.appendChild(img);
+                        gallery.appendChild(link);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                gallery.innerHTML = "<p style='color:#666; margin-top:50px;'>Gallery failed to load.<br>Make sure the 'compressed' folder exists in the NanoBananaKittens repo.</p>";
+            });
+
+        // --- 6. INTERACTION LOGIC ---
+
+        function updateGalleryLinks() {
+            // No longer updating hrefs directly for click nav, since we use openPreview
+            // But we might want to update them for 'Open in New Tab' context menu support if we cared.
+            // For now, the click handler overrides standard nav.
+        }
+
+        // Toggle Settings (Generic)
+        function toggleModal(modal, open) {
+            if (open) {
+                modal.classList.add('open');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.classList.remove('open');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // Preview Modal Logic
+        const previewModal = document.getElementById('preview-modal');
+        const previewImg = document.getElementById('preview-img');
+        const previewSpinner = document.getElementById('preview-spinner');
+        // Need wrapper to clear aspect ratio
+        const previewWrapper = document.querySelector('.preview-image-wrapper');
+        const downloadBtn = document.getElementById('download-btn');
+
+        function openPreview(file) {
+            // 1. Reset State
+            previewImg.classList.remove('loaded');
+            previewWrapper.classList.remove('loaded'); // Resets to square aspect ratio + gray bg
+            previewImg.src = '';
+            previewSpinner.style.display = 'block';
+
+            // 2. Show Modal Immediately
+            previewModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+
+            // 3. Set Image Source
+            // User requested raw image without wsrv.nl compression
+            const previewUrl = file.download_url;
+            previewImg.src = previewUrl;
+
+            previewImg.onload = () => {
+                previewImg.classList.add('loaded');
+                previewWrapper.classList.add('loaded'); // Removes aspect ratio constraint
+                previewSpinner.style.display = 'none';
+            };
+
+            // 4. Set Download Link
+            const originalFileName = file.name.replace(/\.(jpg|jpeg)$/i, '.png');
+            const currentFolder = useMaxQuality ? maximumFolder : originalFolder;
+            const downloadUrl = `https://raw.githubusercontent.com/${imageRepoUser}/${imageRepoName}/${imageRepoBranch}/${currentFolder}/${originalFileName}`;
+
+            downloadBtn.href = downloadUrl;
+        }
+
+        function closePreview() {
+            previewModal.classList.remove('open');
+            document.body.style.overflow = '';
+
+            // Clear src after transition to prevent flash of empty space during close animation
+            // or clear immediately? User says "flash of previous content" on NEXT open.
+            // Clearing on close (after delay) is best, but clearing on OPEN is 100% safe against race conditions.
+
+            // Let's clear it after the transition (300ms)
+            setTimeout(() => {
+                previewImg.src = '';
+                previewImg.classList.remove('loaded');
+                previewSpinner.style.display = 'none';
+            }, 300);
+        }
+
+        // Close on click outside (Backdrop)
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) closePreview();
+        });
+
+        // Update Grid Item Click Logic in fetch loop:
+        // We moved this logic outside the loop to be cleaner? No, we need to attach it to elements.
+        // Let's rely on event delegation or modifying the create loop.
+
+        settingsBtn.addEventListener('click', () => toggleModal(settingsModal, true));
+        closeSettings.addEventListener('click', () => toggleModal(settingsModal, false));
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) toggleModal(settingsModal, false);
+        });
+
+        // Contributions Events
+        contribBtn.addEventListener('click', () => toggleModal(contribModal, true));
+        contribCancel.addEventListener('click', () => toggleModal(contribModal, false));
+        contribModal.addEventListener('click', (e) => {
+            if (e.target === contribModal) toggleModal(contribModal, false);
+        });
+        contribOk.addEventListener('click', () => {
+            window.location.href = "mailto:me@hwxnnn.com?subject=CatCollage Contribution";
+            toggleModal(contribModal, false);
+        });
+
+        // Quality Toggle Listener
+        qualityToggle.addEventListener('change', (e) => {
+            useMaxQuality = e.target.checked;
+            localStorage.setItem('nano_max_quality', useMaxQuality);
+
+            // 1. Update Preview Download Button if open
+            if (previewModal.classList.contains('open') && downloadBtn.href) {
+                if (useMaxQuality) {
+                    downloadBtn.href = downloadBtn.href.replace(`/${originalFolder}/`, `/${maximumFolder}/`);
+                } else {
+                    downloadBtn.href = downloadBtn.href.replace(`/${maximumFolder}/`, `/${originalFolder}/`);
+                }
+            }
+
+            // 2. Update All Grid Links
+            const gridLinks = document.querySelectorAll('.gallery a');
+            gridLinks.forEach(link => {
+                let currentUrl = link.href;
+                if (useMaxQuality) {
+                    // Switch Original -> Maximum
+                    link.href = currentUrl.replace(`/${originalFolder}/`, `/${maximumFolder}/`);
+                } else {
+                    // Switch Maximum -> Original
+                    link.href = currentUrl.replace(`/${maximumFolder}/`, `/${originalFolder}/`);
+                }
+            });
+        });
+
+        // Forced Download Logic
+        downloadBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const url = downloadBtn.href;
+            if (!url || url === '#') return;
+
+            const filename = url.split('/').pop();
+            const originalText = downloadBtn.innerText;
+
+            // Visual Feedback
+            downloadBtn.innerText = "Downloading...";
+            downloadBtn.style.opacity = "0.7";
+            downloadBtn.style.pointerEvents = "none";
+
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(blobUrl);
+                    a.remove();
+                })
+                .catch(err => {
+                    console.error('Download failed, falling back to new tab', err);
+                    window.open(url, '_blank');
+                })
+                .finally(() => {
+                    downloadBtn.innerText = originalText;
+                    downloadBtn.style.opacity = "";
+                    downloadBtn.style.pointerEvents = "";
+                });
+        });
+    </script>
+</body>
+
+</html>
