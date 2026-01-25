@@ -676,6 +676,31 @@
             height: 100%;
             z-index: -1;
         }
+
+        .mobile-instruction {
+            display: none;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 12px 24px;
+            border-radius: 50px;
+            color: #fff;
+            font-size: 0.9rem;
+            margin-top: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 600px) {
+            .download-btn {
+                display: none !important;
+            }
+
+            .mobile-instruction {
+                display: block;
+            }
+        }
     </style>
 </head>
 
@@ -795,9 +820,12 @@
                 <div class="preview-spinner" id="preview-spinner"></div>
                 <img src="" alt="Preview" class="preview-img" id="preview-img">
             </div>
-            <a href="#" class="download-btn" id="download-btn">
+            <a href="#" class="download-btn" id="download-btn" data-i18n="common.download">
                 Download
             </a>
+            <div class="mobile-instruction" data-i18n="mobile.download_instruction">
+                Hold and save to photos
+            </div>
         </div>
     </div>
 
@@ -816,6 +844,8 @@
                 "app.subtitle_pre": "Cat memes, redrawn by",
                 "main.all_photos": "Click on a cat and load them in high resolution.",
                 "common.done": "Done",
+                "common.download": "Download",
+                "mobile.download_instruction": "💾 Hold and save to photos",
                 "settings.title": "Settings",
                 "settings.language": "Language",
                 "settings.system_default": "System Default",
@@ -837,6 +867,8 @@
                 "app.subtitle_pre": "초고화질 고양이 짤,",
                 "main.all_photos": "원하시는 이미지 눌러 고화질로 불러오세요",
                 "common.done": "완료",
+                "common.download": "다운로드",
+                "mobile.download_instruction": "💾 꾹 누르고 '사진 앱에 저장'",
                 "settings.title": "설정",
                 "settings.language": "언어",
                 "settings.system_default": "시스템 기본",
@@ -1160,10 +1192,13 @@
             previewModal.classList.add('open');
             document.body.style.overflow = 'hidden';
 
-            // 3. Set Image Source
-            // User requested raw image without wsrv.nl compression
-            const previewUrl = file.download_url;
-            previewImg.src = previewUrl;
+            // 3. Calculate High Quality URL
+            const originalFileName = file.name.replace(/\.(jpg|jpeg)$/i, '.png');
+            const currentFolder = useMaxQuality ? maximumFolder : originalFolder;
+            const hqUrl = `https://raw.githubusercontent.com/${imageRepoUser}/${imageRepoName}/${imageRepoBranch}/${currentFolder}/${originalFileName}`;
+
+            // 4. Set Image Source (Use HQ version)
+            previewImg.src = hqUrl;
 
             previewImg.onload = () => {
                 previewImg.classList.add('loaded');
@@ -1171,12 +1206,8 @@
                 previewSpinner.style.display = 'none';
             };
 
-            // 4. Set Download Link
-            const originalFileName = file.name.replace(/\.(jpg|jpeg)$/i, '.png');
-            const currentFolder = useMaxQuality ? maximumFolder : originalFolder;
-            const downloadUrl = `https://raw.githubusercontent.com/${imageRepoUser}/${imageRepoName}/${imageRepoBranch}/${currentFolder}/${originalFileName}`;
-
-            downloadBtn.href = downloadUrl;
+            // 5. Set Download Link
+            downloadBtn.href = hqUrl;
         }
 
         function closePreview() {
